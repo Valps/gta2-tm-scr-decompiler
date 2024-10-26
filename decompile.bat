@@ -1,0 +1,2 @@
+@echo off
+start "" "C:\GTA2\z_decompiled\1_remake\gta2-scr-decompiler-master\build\scr_decompiler.exe" C:/GTA2/z_decompiled/1_remake/gta2-scr-decompiler-master/teste/ C:/GTA2/z_decompiled/1_remake/gta2-scr-decompiler-master/teste/ste.SCR
