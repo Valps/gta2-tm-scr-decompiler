@@ -262,8 +262,14 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					
 					if ( params.header->type == SCRCMD_NOT ) {
 						is_not = 1;
+						not_operator = 1;
+						not_init = "NOT ( ";
+						not_end = " )";
 					} else {
 						is_not = 0;
+						not_operator = 0;
+						not_init = "";
+						not_end = "";
 					}
 					
 					//  return to the previous pointer
@@ -320,8 +326,9 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								}
 								
 								//  Cleaning the NOT string
-								if ( not_operator == 1 ) {
+								if ( not_operator == 1 || is_not == 1) {
 									not_operator = 0;
+									is_not = 0;
 									not_init = "";
 									not_end = "";
 									
@@ -330,6 +337,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									params.pointer_index = u2;
 									params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u2]);
 								}
+								
 								skip = 1;
 								//continue;
 							} else {
@@ -342,8 +350,9 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								//  Count the number of brackets and the order of ORs and ANDs
 								for (int brackets = 1; brackets < conditions; brackets++) {
 									
+									get_data(SCR_IF_JUMP, data2);
 									//  Checking if it is a AND or OR
-									if ( params.header->return_value == 1 && data.or_logical_operator == 0 ) {
+									if ( params.header->return_value == 1 && data2.or_logical_operator == 0 ) {
 										// it is a AND
 										and_or_order += "0";
 									} else {
@@ -362,7 +371,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 											params.pointer_index = u5;
 											params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u5]);
 										}
-										//--u5;    //  correction
+										--u5;    //  correction
 									} while ( params.header->type != SCRCMD_IF_JUMP );
 									
 									
@@ -371,7 +380,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									if ( params.header->return_value == 0 && data.or_logical_operator == 0 ) {
 										// it is an ENDIF/ENDWHILE
 										//  Checking if it s a IF or WHILE
-										if ( check_if_or_while(params, u2) == SCRCMD_WHILE ) {
+										if ( check_if_or_while(params, u5) == SCRCMD_WHILE ) {
 											//output += tabs + "WHILE ( " + not_init + retval + not_end + " )" + LINESEP;
 											while_or_if = SCRCMD_WHILE;
 										} else {
@@ -447,7 +456,8 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									params.pointer_index = u4;
 									params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u4]);
 								}
-								//--u4;    //  correction
+								--u4;    //  correction
+								u2 = u4;
 								
 							} else {
 								//  The script wasn't coded correctly (i.e. the order of ORs and ANDs brackets isn't correct)
