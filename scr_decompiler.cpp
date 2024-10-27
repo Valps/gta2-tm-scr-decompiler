@@ -110,8 +110,8 @@ SCR_DECOMPILER_API string SCR_FLOAT_PATTERN = "%.2f"; // change this if you need
 
 #define SCR_INCLUDE_DEBUG 5000 // if not defined, code will be faster but unfinished commands (currently only IF/WHILE etc. structures) cannot be seen.
 
-SCR_DECOMPILER_API bool SCR_use_debug = 1; // switch error file writing on/off at runtime (can be used if SCR_INCLUDE_DEBUG defined).
-SCR_DECOMPILER_API bool SCR_debug_all_lines = 1; // if 0: using only command names for unknown commands output, if 1: show all commands raw hex data.
+SCR_DECOMPILER_API bool SCR_use_debug = 0; // switch error file writing on/off at runtime (can be used if SCR_INCLUDE_DEBUG defined).
+SCR_DECOMPILER_API bool SCR_debug_all_lines = 0; // if 0: using only command names for unknown commands output, if 1: show all commands raw hex data.
 
 #ifndef LINESEP
  #ifdef _WIN32
@@ -193,6 +193,55 @@ uint16_t check_if_or_while( FPStruct &params, uint16_t u ) {            //FPStru
 	}
 }
 
+bool is_it_an_endif_endwhile ( FPStruct &params , uint16_t return_value, uint16_t or_operator , bool is_exec, int u_init ) {
+	if ( is_exec == 0 ) {
+		//  There is no WHILE_EXEC, so there is no problem
+		if ( return_value == 0 && or_operator == 0 ) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		//  There is an WHILE_EXEC
+		//  Automatically return_value == 1
+		//  So we need to verify if "else_jump_or_endif_index" matches with another IF_JUMP
+		//  If yes, it isn't a ENDIF/ENDWHILE
+		//  If not, it is a ENDIF/ENDWHILE
+		
+		//  Suppose that params is already pointing at the IF_JUMP we are analysing
+		get_data(SCR_IF_JUMP, data5);
+		
+		uint16_t exit_point = data5.else_jump_or_endif_index;
+		int original_point = params.pointer_index;				//  used to get back at the end
+		
+		for (int u6 = u_init; params.header->cmd_this != exit_point ; u6++) {
+			params.point = params.pointers[u6];
+			params.pointer_index = u6;
+			params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u6]);
+		}
+		
+		//  Verifying
+		if ( params.header->type == SCRCMD_IF_JUMP ) {
+			
+			//  Return to its original pointer
+			params.point = params.pointers[original_point];
+			params.pointer_index = original_point;
+			params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point]);
+			
+			return false;
+		} else {
+			
+			//  Return to its original pointer
+			params.point = params.pointers[original_point];
+			params.pointer_index = original_point;
+			params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point]);
+			
+			return true;
+		}
+		
+	}
+}
+
 // decompiles the script by using range of pointers.
 // note: end_point should be a count value, such as max_pointers etc.
 void process_pointers(FPStruct &params, const int &start_point, const int &end_point, string &output){
@@ -205,10 +254,12 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 	bool skip = 0;					    //  workaround to use "continue" outside a DO...WHILE;
 	bool is_not = 0;					//  this = 1 means that the next boolean check is undergoing a NOT
 	bool is_endif = 0;					//  WHILE_EXEC
+	bool is_exec = 0;					//  this = 1 means that there is an EXEC acquired from a WHILE_EXEC
+	
 	int else_count = 0;				    //  counts the number of ELSEs in a IF/WHILE
 	int line = 1;						//  The line of an AND or OR below an IF/WHILE
 	
-	uint16_t while_or_if = 0;				//  it is used when there are AND and ORs in a IF or WHILE
+	uint16_t while_or_if = 0;			//  it is used when there are AND and ORs in a IF or WHILE
 	
 	uint16_t else_point[20];			//  pointers of ELSEs    (20 ELSEs per IF/WHILE block is enough)
 	uint16_t next_point;
@@ -219,6 +270,8 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 	string not_init = "";
 	string not_end = "";
 	
+	string str_exec = "";		   //  this = "" if there is a WHILE;    this = "_EXEC" if there is a WHILE_EXEC
+	
 	string and_or_order = "";      //   0 = and, 1 = or, e.g.  "0010" =  ( ( ( (...) AND (...) ) AND (...) ) OR (...) ) AND (...)   [it does not include NOTs]
 	string str_bracket = "";       //   this = "(" or "( (" or "( ( (" etc.
 	
@@ -227,7 +280,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 		params.pointer_index = u;
 		params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.point);
 
-		#ifdef SCR_INCLUDE_DEBUG
+		#ifdef SCR_INCLUDE_DEBUG			//   For now all IF/WHILE decompiler code is in debug. When it is finished, I will restore debug outputs
 		if(params.point == 0){
 			if(SCR_debug_all_lines){
 				output += tabs + sprintf_str("// (0) = (%05d)" LINESEP, u);
@@ -248,6 +301,14 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					
 					inside_if_while = 1;
 					
+					//  Check if it is being executed by an WHILE_EXEC       TODO: NOT CONFUSE WITH "AND"
+					if ( params.header->return_value == 1 ) {
+						is_exec = 1;
+						str_exec = "_EXEC";
+					} else {
+						is_exec = 0;
+						str_exec = "";
+					}
 					
 					//  Check if there is a NOT right after it-
 					not_next_point = params.header->cmd_next;
@@ -306,10 +367,10 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 							
 							
 							//  Checking if this IF/WHILE has only one check (i.e. there is no AND or OR) so it will jump at the end
-							if( params.header->return_value == 0 && data.or_logical_operator == 0 ){		//   && data.or_logical_operator == 0
+							if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ){	 //   params.header->return_value == 0 && data.or_logical_operator == 0
 								
 								if ( check_if_or_while(params, u2) == SCRCMD_WHILE ) {
-									output += tabs + "WHILE ( " + not_init + retval + not_end + " )" + LINESEP;
+									output += tabs + "WHILE" + str_exec + " ( " + not_init + retval + not_end + " )" + LINESEP;
 								} else {
 									output += tabs + "IF ( " + not_init + retval + not_end + " )" + LINESEP;    //   + sprintf_str("%i", u2)
 								}
@@ -326,7 +387,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								}
 								
 								//  Cleaning the NOT string
-								if ( not_operator == 1 || is_not == 1) {
+								if ( not_operator == 1 || is_not == 1 ) {
 									not_operator = 0;
 									is_not = 0;
 									not_init = "";
@@ -352,11 +413,12 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									
 									get_data(SCR_IF_JUMP, data2);
 									//  Checking if it is a AND or OR
-									if ( params.header->return_value == 1 && data2.or_logical_operator == 0 ) {
-										// it is a AND
+									//  is_it_an_endif_endwhile( params, params.header->return_value, data2.or_logical_operator, is_exec, u )
+									if ( data2.or_logical_operator == 0 ) {	
+										// it is an AND
 										and_or_order += "0";
 									} else {
-										// it is a OR
+										// it is an OR
 										and_or_order += "1";
 									}
 									
@@ -377,14 +439,12 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									
 									//  Checking if it is an ENDIF/ENDWHILE or another link
 									get_data(SCR_IF_JUMP, data);
-									if ( params.header->return_value == 0 && data.or_logical_operator == 0 ) {
+									if ( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ) {					///   TODO
 										// it is an ENDIF/ENDWHILE
 										//  Checking if it s a IF or WHILE
 										if ( check_if_or_while(params, u5) == SCRCMD_WHILE ) {
-											//output += tabs + "WHILE ( " + not_init + retval + not_end + " )" + LINESEP;
 											while_or_if = SCRCMD_WHILE;
 										} else {
-											//output += tabs + "IF ( " + not_init + retval + not_end + " )" + LINESEP;    //   + sprintf_str("%i", u2)
 											while_or_if = SCRCMD_IF;
 										}
 										// store the index of the first command in IF/WHILE block
@@ -425,7 +485,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								if ( while_or_if == SCRCMD_IF ) {
 									output += tabs + "IF ( " + str_bracket + not_init + retval + not_end + " )" + LINESEP;
 								} else {
-									output += tabs + "WHILE ( " + str_bracket + not_init + retval + not_end + " )" + LINESEP;
+									output += tabs + "WHILE" + str_exec + " ( " + str_bracket + not_init + retval + not_end + " )" + LINESEP;
 								}
 								
 								tabs += "\t\t\t";			//  TABS
@@ -433,7 +493,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								//  Go constructing the other lines in comment """"Resume the construction of the IF/WHILE""""
 								building_if_while = 1;		//  Just to ensure
 								skip = 1;
-								break;			//   TODO: IT'S PROVISIONAL
+								break;
 							}
 							
 							
@@ -541,7 +601,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					//  Detecting if this IF_JUMP is a AND / OR link, or if it is an ENDIF/ENDWHILE
 					get_data(SCR_IF_JUMP, data);
 					
-					if( ( params.header->return_value == 0 && data.or_logical_operator == 0 ) || is_endif == 1 ){
+					if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ){					///   TODO
 						//  It's the end of a IF or a WHILE
 						//  Now we need to check if there is a GOTO in current_pointer + 3
 						
@@ -567,7 +627,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 						}
 						*/
 						
-						is_endif = 0;	//  reset
+						//is_endif = 0;	//  reset
 						
 						continue;    //  go to next pointer
 						
@@ -602,6 +662,10 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 				}
 					
 				
+				//   TODO       skipping IF_JUMP for now
+				if ( params.header->type == SCRCMD_IF_JUMP ) {
+					continue;
+				}
 				
 				if(params.header->type == SCRCMD_FUNCTION){
 					output += LINESEP;
@@ -610,7 +674,8 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 						tabs = tabs.substr(0, tabs.length()-1);
 					}
 				}
-
+				
+				
 				if(SCR_debug_all_lines){
 					if(is_bool_function(params.header->type)){
 						cmdstr = hexdump(params, 0); // show all data for boolean functions, but don't display the command name string.
@@ -621,6 +686,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 				}else{
 					output += tabs + retval + LINESEP; // no debug info for known commands!
 				}
+				
 
 				// indents handling:
 				if(params.header->type == SCRCMD_FUNCTION){
@@ -635,7 +701,8 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					output += tabs + hexdump(params) + LINESEP; // output unknown commands with their hex values.
 				}else{
 					if(params.header->type != 0){
-						output += tabs + string("// CMD:") + get_scr_cmd(params.header->type) + LINESEP; // show only command names.
+						//  Deactivated for now							TODO
+						//output += tabs + string("// CMD:") + get_scr_cmd(params.header->type) + LINESEP; // show only command names.
 					}
 				}
 			}
