@@ -1,12 +1,12 @@
 ## Modifications by Valps
 
-- Now IFs, ELSEs, WHILEs, NOTs, ORs and ANDs are decompiled;
+- Now IFs, ELSEs, WHILEs, WHILE_EXECs, NOTs, ORs and ANDs are decompiled;
 - The "FORWARD" command doesn't appear in missions scripts anymore, only in base script;
 - Now the RETURN command doesn't remove indentation if it is in a IF/WHILE block;
 
 ## Known issues
 
-- It crashes if its try to decompile a WHILE_EXEC
+- It crashes if you try to decompile a entire district at once, with all missions. However all main script can be decompiled (wil.scr, bil.scr and ste.scr) without problems.
 
 Greetings from Valps.
 
