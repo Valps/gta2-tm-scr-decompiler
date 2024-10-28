@@ -3,16 +3,18 @@
 - Now IFs, ELSEs, WHILEs, WHILE_EXECs, NOTs, ORs and ANDs are decompiled;
 - The "FORWARD" command doesn't appear in missions scripts anymore, only in base script;
 - Now the RETURN command doesn't remove indentation if it is in a IF/WHILE block;
+- All variables declarations that happens in mission script now have unique (i.e. non-duplicated) names;
+- Now structures "DO ... WHILE_TRUE" can be decompiled as well;
 
 ## Known issues
 
-- It crashes if you try to decompile a entire district at once, with all missions. However all main script can be decompiled (wil.scr, bil.scr and ste.scr) without problems.
+- It crashes if you try to decompile Industrial District with all missions at once. However its main script (bil.scr) can be decompiled without problems.
 
 Greetings from Valps.
 
 Original fork: https://gitlab.com/classic-gta/gta2-scr-decompiler/-/tree/master
 
-Original readme:
+Original readme below:
 
 # Epic GTA2 Script Decompiler
 
