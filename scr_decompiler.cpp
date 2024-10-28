@@ -32,7 +32,7 @@
 // - B-$hep for the project idea and being helpful.
 // - Vike for some of the string arrays.
 // - T.B. for noticing data offset bug.
-// - Valps for IF/WHILE/ELSE/NOT/AND/OR decompiling.
+// - Valps for IF/WHILE/WHILE_EXEC/ELSE/NOT/AND/OR decompiling.
 //
 // Note: If you edit the code, credit yourself above. If you edited the code a lot,
 // and you feel you deserve to be credited in the build_credits() function, then
@@ -375,7 +375,6 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									output += tabs + "IF ( " + not_init + retval + not_end + " )" + LINESEP;    //   + sprintf_str("%i", u2)
 								}
 								
-								
 								tabs += "\t\t\t";			//  TABS
 								building_if_while = 0;		//  Finish  IF/WHILE line
 								
@@ -692,7 +691,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 				if(params.header->type == SCRCMD_FUNCTION){
 					tabs += "\t";
 				}else if(params.header->type == SCRCMD_RETURN){
-					if(tabslen > 0){ // don't add space if it wasnt inside a function.
+					if(tabslen > 0 && inside_if_while == 0){ // don't add space if it wasnt inside a function.
 						output += LINESEP;
 					}
 				}
@@ -919,7 +918,9 @@ SCR_DECOMPILER_API int decompile_scr(const string &base_script,	string &base_scr
 	process_pointers(params, 1, params.used_pointers, base_script_output);
 
 	int base_script_used_pointers = params.used_pointers; // params.used_pointers will vary if using missions!
-
+	
+	/////////////////////////    variable names stuff    2
+	
 	// store a copy of the base script variable/function names:
 	uint16_tStrMap varnamearray_base;
 	StrIntMap nameprefixcounter_base;
@@ -936,6 +937,9 @@ SCR_DECOMPILER_API int decompile_scr(const string &base_script,	string &base_scr
 		funcnamearray_base = funcnamearray;
 		funcnameprefixcounter_base = funcnameprefixcounter;
 	}
+	
+	// Testing
+	//reset_varname_arrays = false;     //  Testing
 
 	////////////////////////////////////
 	//
@@ -946,6 +950,22 @@ SCR_DECOMPILER_API int decompile_scr(const string &base_script,	string &base_scr
 	int elems = mission_scripts.size();
 	for(int u = 0; u < elems; u++){
 		params.filename = mission_scripts[u]; // update internal filename (might be used by some functions).
+		
+		int mission_number = (int) (u+1)/2;
+		
+		//  To give non-duplicated names to variables
+		
+		VARNAME_SOUND = 			"m_" + sprintf_str("%i", mission_number) + "_sound";
+		VARNAME_OBJECT = 			"m_" + sprintf_str("%i", mission_number) + "_obj";
+		VARNAME_CAR = 				"m_" + sprintf_str("%i", mission_number) + "_auto";
+		VARNAME_CHAR = 				"m_" + sprintf_str("%i", mission_number) + "_chr";
+		VARNAME_BONUS = 			"m_" + sprintf_str("%i", mission_number) + "_bonus";
+		VARNAME_ARROW = 			"m_" + sprintf_str("%i", mission_number) + "_arrow";
+		VARNAME_TIMER = 			"m_" + sprintf_str("%i", mission_number) + "_timer";
+		VARNAME_ONSCREEN_COUNTER =  "m_" + sprintf_str("%i", mission_number) + "_onscreen";
+		VARNAME_LIGHT = 			"m_" + sprintf_str("%i", mission_number) + "_light";
+		VARNAME_COUNTER = 			"m_" + sprintf_str("%i", mission_number) + "_count";
+		VARNAME_FUNCTION = 			"m_" + sprintf_str("%i", mission_number) + "_function";
 
 		if((fp = fopen(params.filename, "rb"))){
 			// read header:
