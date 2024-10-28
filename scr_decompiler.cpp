@@ -194,6 +194,7 @@ uint16_t check_if_or_while( FPStruct &params, uint16_t u ) {            //FPStru
 }
 
 bool is_it_an_endif_endwhile ( FPStruct &params , uint16_t return_value, uint16_t or_operator , bool is_exec, int u_init ) {
+	
 	if ( is_exec == 0 ) {
 		//  There is no WHILE_EXEC, so there is no problem
 		if ( return_value == 0 && or_operator == 0 ) {
@@ -222,6 +223,23 @@ bool is_it_an_endif_endwhile ( FPStruct &params , uint16_t return_value, uint16_
 		
 		//  Verifying
 		if ( params.header->type == SCRCMD_IF_JUMP ) {
+			//  In some rare cases there is a ENDIF/ENDWHILE even if else_jump_or_endif_index goes to another IF_JUMP
+			
+			
+			params.point = params.pointers[original_point-1];
+			params.pointer_index = original_point-1;
+			params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point-1]);
+			
+			if ( params.point == 0 ) {
+				
+				//  Return to its original pointer
+				params.point = params.pointers[original_point];
+				params.pointer_index = original_point;
+				params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point]);
+				
+				return true;
+			}
+			
 			
 			//  Return to its original pointer
 			params.point = params.pointers[original_point];
@@ -229,6 +247,33 @@ bool is_it_an_endif_endwhile ( FPStruct &params , uint16_t return_value, uint16_
 			params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point]);
 			
 			return false;
+			/*
+			//  Go to next index if it's TRUE
+			uint16_t next_point = params.header->cmd_next;
+			for (int u6 = u_init; params.header->cmd_this != exit_point ; u6++) {
+				params.point = params.pointers[u6];
+				params.pointer_index = u6;
+				params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u6]);
+			}
+			if ( is_bool_function(params.header->type) ) {
+				
+				//  return again
+				params.point = params.pointers[original_point];
+				params.pointer_index = original_point;
+				params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point]);
+				
+				return false;
+			} else {
+				//  If the next command isn't boolean, then it's an ENDIF/ENDWHILE
+				//  return again
+				params.point = params.pointers[original_point];
+				params.pointer_index = original_point;
+				params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[original_point]);
+				
+				return true;
+			}
+			
+			return false; */
 		} else {
 			
 			//  Return to its original pointer
@@ -303,10 +348,11 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 			if ( params.header->type == SCRCMD_IF_JUMP ) {
 				get_data(SCR_IF_JUMP, data);
 				//  Checking if this IF/WHILE has only one check (i.e. there is no AND or OR) so it will jump at the end
-				if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ){
+				if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, start_point ) ){
 					//  Check if it's supposed to be a ENDWHILE
 					
 					//  TESTING
+					
 					params.point = params.pointers[u];
 					params.pointer_index = u;
 					params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.point);
@@ -361,7 +407,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 							do_point[do_count] = next_point;
 							++do_count;
 							
-							output +=  string("// CMD: DO found: ") + sprintf_str("%i", u2) + "\n";
+							//output +=  string("// CMD: DO found: ") + sprintf_str("%i", u2) + "\n";
 						}
 						
 					}
@@ -400,7 +446,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 		}else{
 			if((it = Functions.find(params.header->type)) != Functions.end()){
 				
-				if ( params.header->type == SCRCMD_NOT ) {
+				if ( params.header->type == SCRCMD_NOT || params.header->type == SCRCMD_GOTO ) {
 					continue;
 				}
 				
@@ -427,7 +473,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					
 					
 					int u0 = u;
-					for (u0 = u; params.header->cmd_this != not_next_point ; u0++) {
+					for (u0 = start_point; params.header->cmd_this != not_next_point ; u0++) {
 						params.point = params.pointers[u0];
 						params.pointer_index = u0;
 						params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u0]);
@@ -460,7 +506,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 						
 						//  forward to the next pointer
 						int u2;
-						for (u2 = u; params.header->cmd_this != next_point ; u2++) {
+						for (u2 = start_point; params.header->cmd_this != next_point ; u2++) {
 							params.point = params.pointers[u2];
 							params.pointer_index = u2;
 							params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u2]);
@@ -478,7 +524,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 							
 							
 							//  Checking if this IF/WHILE has only one check (i.e. there is no AND or OR) so it will jump at the end
-							if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ){	 //   params.header->return_value == 0 && data.or_logical_operator == 0
+							if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, start_point ) ){	 //   params.header->return_value == 0 && data.or_logical_operator == 0
 							
 								bool is_while_true = false;
 								
@@ -494,7 +540,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									next_point = params.header->cmd_next;
 						
 									//  forward to the next pointer
-									for (u2 = u; params.header->cmd_this != next_point ; u2++) {
+									for (u2 = start_point; params.header->cmd_this != next_point ; u2++) {
 										params.point = params.pointers[u2];
 										params.pointer_index = u2;
 										params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u2]);
@@ -520,6 +566,15 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									//  It's an ENDIF
 									output += tabs + "IF ( " + not_init + retval + not_end + " )" + LINESEP;    //   + sprintf_str("%i", u2)
 									inside_an_if++;
+									
+									//  Checking if there is an ELSE
+								
+									if ( data.else_jump_or_endif_index < params.header->cmd_this ) {
+										//  There is an ELSE
+										else_point[else_count] = data.else_jump_or_endif_index;
+										++else_count;
+									}
+									
 								}
 								
 								if ( is_while_true == false ) {
@@ -527,12 +582,8 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								}
 								building_if_while = 0;		//  Finish  IF/WHILE line
 								
-								//  Checking if there is an ELSE
-								if ( data.else_jump_or_endif_index < params.header->cmd_this ) {
-									//  There is an ELSE
-									else_point[else_count] = data.else_jump_or_endif_index;
-									++else_count;
-								}
+								
+								
 								
 								//  Cleaning the NOT string
 								if ( not_operator == 1 || is_not == 1 ) {
@@ -561,7 +612,6 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									
 									get_data(SCR_IF_JUMP, data2);
 									//  Checking if it is a AND or OR
-									//  is_it_an_endif_endwhile( params, params.header->return_value, data2.or_logical_operator, is_exec, u )
 									if ( data2.or_logical_operator == 0 ) {	
 										// it is an AND
 										and_or_order += "0";
@@ -576,7 +626,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									int u5 = u;
 									do {
 										next_point = params.header->cmd_next;
-										for (u5 = u; params.header->cmd_this != next_point ; u5++) {
+										for (u5 = start_point; params.header->cmd_this != next_point ; u5++) {
 											params.point = params.pointers[u5];
 											params.pointer_index = u5;
 											params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u5]);
@@ -587,7 +637,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									
 									//  Checking if it is an ENDIF/ENDWHILE or another link
 									get_data(SCR_IF_JUMP, data);
-									if ( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ) {					///   TODO
+									if ( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, start_point ) ) {						///   TODO
 										// it is an ENDIF/ENDWHILE
 										//  Checking if it s a IF or WHILE
 										if ( check_if_or_while(params, u5) == SCRCMD_WHILE ) {
@@ -598,13 +648,15 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 										// store the index of the first command in IF/WHILE block
 										access_command_index = params.header->cmd_next;
 										
-										// check for ELSEs
+										//  check for ELSEs
 										//  Checking if there is an ELSE
+										
 										if ( data.else_jump_or_endif_index < params.header->cmd_this ) {
 											//  There is an ELSE
 											else_point[else_count] = data.else_jump_or_endif_index;
 											++else_count;
 										}
+										
 										break;
 										
 									} else {
@@ -642,7 +694,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								//  Go constructing the other lines in comment """"Resume the construction of the IF/WHILE""""
 								building_if_while = 1;		//  Just to ensure
 								skip = 1;
-								break;
+								break;			//  Break DO... WHILE
 							}
 							
 							
@@ -660,7 +712,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								
 								next_point = params.header->cmd_next;
 								int u4;
-								for (u4 = u; params.header->cmd_this != next_point ; u4++) {
+								for (u4 = start_point; params.header->cmd_this != next_point ; u4++) {
 									params.point = params.pointers[u4];
 									params.pointer_index = u4;
 									params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u4]);
@@ -742,7 +794,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 						
 				}
 				
-				//    Returning to the original pointer it it has changed
+				//    Returning to the original pointer if it has been changed
 				
 				params.point = params.pointers[u];
 				params.pointer_index = u;
@@ -755,14 +807,14 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					//  Detecting if this IF_JUMP is a AND / OR link, or if it is an ENDIF/ENDWHILE
 					get_data(SCR_IF_JUMP, data);
 					
-					if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, u ) ){					///   TODO
+					if( is_it_an_endif_endwhile( params, params.header->return_value, data.or_logical_operator, is_exec, start_point ) ){					///   TODO
 						//  It's the end of a IF or a WHILE
 						//  Now we need to check if there is a GOTO in current_pointer + 3
 						
 						if ( check_if_or_while(params, u) == SCRCMD_WHILE ) {
 							//  Checking if it's a ENDWHILE or the end of a WHILE_TRUE
 							
-							bool is_while_true = false;
+							bool is_while_true = false;	     //  initializing
 							
 							//  forward to the next pointer
 							int u2;
@@ -777,7 +829,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 								is_jump_back = false;
 								//  Verifying
 								
-								for (u2 = u; params.header->cmd_this != next_point ; u2++) {
+								for (u2 = start_point; params.header->cmd_this != next_point ; u2++) {
 									params.point = params.pointers[u2];
 									params.pointer_index = u2;
 									params.header = get_scr_typepoint(SCR_CMD_HEADER, params.script, params.pointers[u2]);
@@ -852,8 +904,9 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					else_count = 0;			//  reset
 				}
 				
+				
 				//  Building ELSEs
-				if ( inside_if_while == 1 ) {
+				if ( inside_an_if ) {		//  inside_if_while == 1
 					//  Check if it has reached an ELSE
 					if ( else_count > 0 ) {
 						for (int else_index = 0; else_index < else_count; else_index++ ) {
@@ -867,13 +920,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 					}
 				}
 				
-				//  TESTING
-				/*
-				if ( params.header->cmd_this == do_point[0] ) {
-					output += tabs + "ACHEI: " + sprintf_str("%i", u) + "\n";
-				}
-				output += tabs + "NUMERO: " + sprintf_str("%i", u) + "\n";
-				*/
+				
 				
 				/*
 				//  Building DO's
@@ -1169,7 +1216,7 @@ SCR_DECOMPILER_API int decompile_scr(const string &base_script,	string &base_scr
 	for(int u = 0; u < elems; u++){
 		params.filename = mission_scripts[u]; // update internal filename (might be used by some functions).
 		
-		int mission_number = (int) (u+1)/2;
+		int mission_number = u+1;
 		
 		//  To give non-duplicated names to variables
 		

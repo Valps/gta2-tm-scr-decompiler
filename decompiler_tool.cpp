@@ -6,7 +6,7 @@
 
 #include <scr_decompiler_api.h>
 
-#include <stdio.h>	  //  para pausar
+//#include <stdio.h>	  //  para pausar
 
 #include <fstream>
 #include <bits/stl_vector.h>

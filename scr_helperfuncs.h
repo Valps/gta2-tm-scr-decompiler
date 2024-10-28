@@ -170,6 +170,8 @@ bool is_bool_function(const uint16_t &type){
 	return array_key_exists(type, BoolFunctions);
 }
 
+/////////////////////////    variable names stuff    1
+
 typedef map<uint16_t, string, greater<uint16_t> > uint16_tStrMap;
 typedef map<string, int, greater<string> > StrIntMap;
 uint16_tStrMap varnamearray;
