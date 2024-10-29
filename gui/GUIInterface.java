@@ -28,12 +28,13 @@ import java.lang.InterruptedException;
 public class GUIInterface {
 	
 	static boolean decompile_missions = false;
+	static boolean path_saved = false;
 	static String base_script_path;
 	static String mission_path;
 	static String output_path;
 	
 	public static void main(String[] args) {
-		JFrame window = new JFrame("T.M. Decompiler User Interface v0.5.1");
+		JFrame window = new JFrame("T.M. Decompiler User Interface v0.5.2");
 		
 		JPanel first_panel = new JPanel();
 		JPanel second_panel = new JPanel();
@@ -61,7 +62,15 @@ public class GUIInterface {
 		b_load.addActionListener(new java.awt.event.ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fc = new JFileChooser(System.getProperty("user.dir"));
+				String initial_path;
+				//  If it was opened before, use the previous path
+				if ( path_saved ) {
+					initial_path = base_script_path;
+				} else {
+					initial_path = System.getProperty("user.dir");
+				}
+				
+				final JFileChooser fc = new JFileChooser(initial_path);
 				FileNameExtensionFilter filter = new FileNameExtensionFilter("SCR script files", "scr");
 				fc.setFileFilter(filter);
 				fc.showOpenDialog(null);
@@ -112,14 +121,17 @@ public class GUIInterface {
 					
 					GUIInterface.base_script_path = absolute_path;
 					f_load.setText(absolute_path);
+					path_saved = true;
 					
 					//  If output directory hasn't been set yet
+					/*
 					if ( ( f_out.getText() == null ) || ( f_out.getText().equals("") ) ) {
 						GUIInterface.output_path = output_path;
 						f_out.setText(output_path);
 					}
-					
-					
+					*/
+					GUIInterface.output_path = output_path;
+					f_out.setText(output_path);
 					
 				}
 			}
