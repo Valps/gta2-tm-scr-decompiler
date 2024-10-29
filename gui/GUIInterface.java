@@ -86,9 +86,10 @@ public class GUIInterface {
 					
 					if ( tempFile.exists() ) {
 						
+						GUIInterface.mission_path = mission_path;
+						
 						if ( JOptionPane.showConfirmDialog(null, "Mission script folder was found. Do you want decompile them as well?", "Mission folder found",JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION ) {
 							GUIInterface.decompile_missions = true;
-							GUIInterface.mission_path = mission_path;
 							
 							//  If the box isn't selected, do select
 							if ( !cb_dec_missions.isSelected() ) {
