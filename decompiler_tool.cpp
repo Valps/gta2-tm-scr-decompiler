@@ -6,7 +6,7 @@
 
 #include <scr_decompiler_api.h>
 
-//#include <stdio.h>	  //  para pausar
+#include <stdio.h>	  //  to make pauses and print
 
 #include <fstream>
 #include <bits/stl_vector.h>
@@ -25,12 +25,13 @@ main(int argc, char **argv)
 	int ret;
 	string out_dir = argv[1];
 	string base_script = argv[2];
+	string subscript_dir;
 	string base_script_output;
 	vector<string> mission_scripts;
 	vector<string> mission_scripts_output;
 	printf("Base script: '%s'.\n", base_script.c_str());
 	if(argc > 3) {
-		string subscript_dir = argv[3];
+		subscript_dir = argv[3];
 		for(const auto & entry : fs::directory_iterator(subscript_dir)) {
 			printf("Found mission script: '%s'\n", entry.path().filename().c_str());
 			mission_scripts.push_back( entry.path().generic_string() );		//                                    :(
@@ -54,21 +55,38 @@ main(int argc, char **argv)
 	printf("Saving... ");
 	fs::path out_path = out_dir;
 	fs::path old_script = base_script;
-	old_script.replace_extension(".mis");
+	
+	string name = old_script.string();
+	size_t lastindex = name.find_last_of("."); 
+	name = name.substr(0, lastindex); 
+	name += "_decompiled.mis";
+	old_script = name;
+	
+	//old_script.replace_extension(".mis");						//  _decompiled
 	ofstream script_out(out_path / old_script.filename());
 	script_out << base_script_output;
 	script_out.close();
+	
+	
+	out_path = subscript_dir;		//  output missions script in their folder
 
 	for(size_t i=0; i<mission_scripts.size(); i++) {
 		fs::path old_subscript = mission_scripts[i];
+		
+		name = old_subscript.string();
+		lastindex = name.find_last_of("."); 
+		name = name.substr(0, lastindex); 
+		name += "_decompiled.mis";
+		old_subscript = name;
+		
 		string subscript = mission_scripts_output[i];
-		old_subscript.replace_extension(".mis");
+		//old_subscript.replace_extension(".mis");
 		ofstream subscript_out(out_path / old_subscript.filename());
 		subscript_out << subscript;
 		subscript_out.close();
 	}
 	printf("done.\n");
-	//getchar();
+	//getchar();				//  pause
 	//getchar();
 	return ret;
 }
