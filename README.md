@@ -9,6 +9,7 @@
 ## Known issues
 
 - It crashes if you try to decompile Industrial District with all missions at once. However its main script (bil.scr) can be decompiled without problems.
+- The char objective ENTER_CAR_AS_PASSENGER is misreplaced by ENTER_CAR_AS_DRIVER.
 
 Greetings from Valps.
 
