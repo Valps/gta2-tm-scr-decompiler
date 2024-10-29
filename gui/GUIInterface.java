@@ -33,7 +33,7 @@ public class GUIInterface {
 	static String output_path;
 	
 	public static void main(String[] args) {
-		JFrame window = new JFrame("T.M. Decompiler User Interface");
+		JFrame window = new JFrame("T.M. Decompiler User Interface v0.5.1");
 		
 		JPanel first_panel = new JPanel();
 		JPanel second_panel = new JPanel();
