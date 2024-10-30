@@ -29,12 +29,15 @@ public class GUIInterface {
 	
 	static boolean decompile_missions = false;
 	static boolean path_saved = false;
+	static boolean put_decompile = true;
 	static String base_script_path;
 	static String mission_path;
 	static String output_path;
 	
 	public static void main(String[] args) {
-		JFrame window = new JFrame("T.M. Decompiler User Interface v0.5.2");
+		JFrame window = new JFrame("T.M. Decompiler User Interface v0.6.0");
+		
+		window.setLocationRelativeTo(null);
 		
 		JPanel first_panel = new JPanel();
 		JPanel second_panel = new JPanel();
@@ -49,6 +52,9 @@ public class GUIInterface {
 		JTextField f_out = new JTextField(27);
 		
 		JCheckBox cb_dec_missions = new JCheckBox("Decompile missions");
+		JCheckBox cb_put_dec = new JCheckBox("Put '_decompiled'");
+		
+		cb_put_dec.setSelected(true);		//  True by default
 		
 		cb_dec_missions.setEnabled(false);
 		
@@ -173,6 +179,18 @@ public class GUIInterface {
 			}
 		} );
 		
+		//  CheckBox to put "_decompiled" at the end of output files
+		cb_put_dec.addItemListener( new java.awt.event.ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent event) {
+				if (cb_put_dec.isSelected()) {
+					GUIInterface.put_decompile = true;			// e.getStateChange()==1
+				} else {
+					GUIInterface.put_decompile = false;
+				}
+			}
+		} );
+		
 		
 		//  Button to decompile
 		b_decompile.addActionListener(new java.awt.event.ActionListener() {
@@ -183,27 +201,31 @@ public class GUIInterface {
 				
 				//  Checking for unfullfilled fields
 				if ( ( f_load.getText() == null ) || ( f_load.getText().equals("") ) ) {
-					JOptionPane.showMessageDialog(null,"Error: Select a valid .scr file.", "Ok", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,"Error: Select a valid .scr file.", "Error", JOptionPane.ERROR_MESSAGE);
 					error = true;
+					return;
 				}
 				
 				File tempFile = new File(f_load.getText());
 				
 				if ( !tempFile.exists() ) {
-					JOptionPane.showMessageDialog(null,"Error: Select a valid .scr file.", "Ok", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,"Error: Select a valid .scr file.", "Error", JOptionPane.ERROR_MESSAGE);
 					error = true;
+					return;
 				}
 				
 				if ( ( f_out.getText() == null ) || ( f_out.getText().equals("") ) ) {
-					JOptionPane.showMessageDialog(null,"Error: Select a valid output folder.", "Ok", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,"Error: Select a valid output folder.", "Error", JOptionPane.ERROR_MESSAGE);
 					error = true;
+					return;
 				}
 				
 				tempFile = new File(f_out.getText());
 				
 				if ( !tempFile.exists() ) {
-					JOptionPane.showMessageDialog(null,"Error: Select a valid output folder.", "Ok", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,"Error: Select a valid output folder.", "Error", JOptionPane.ERROR_MESSAGE);
 					error = true;
+					return;
 				}
 				
 				//  If everything is ok
@@ -216,16 +238,46 @@ public class GUIInterface {
 					decompiler_folder = decompiler_folder.concat("scr_decompiler.exe");
 					
 					if ( GUIInterface.decompile_missions == false ) {
-						pb = new ProcessBuilder("cmd", "/c", "scr_decompiler.exe", f_out.getText(), f_load.getText());
+						
+						//  Put "_decompile" or not
+						if ( put_decompile ) {
+							pb = new ProcessBuilder("cmd", "/c", "scr_decompiler.exe", "1", f_out.getText(), f_load.getText());
+						} else {
+							pb = new ProcessBuilder("cmd", "/c", "scr_decompiler.exe", "0", f_out.getText(), f_load.getText());
+						}
+						
 					} else {
-						pb = new ProcessBuilder("cmd", "/c", "scr_decompiler.exe", f_out.getText(), f_load.getText(), GUIInterface.mission_path);
+						
+						//  Put "_decompile" or not
+						if ( put_decompile ) {
+							pb = new ProcessBuilder("cmd", "/c", "scr_decompiler.exe", "1", f_out.getText(), f_load.getText(), GUIInterface.mission_path);
+						} else {
+							pb = new ProcessBuilder("cmd", "/c", "scr_decompiler.exe", "0", f_out.getText(), f_load.getText(), GUIInterface.mission_path);
+						}
+						
 					}
 					
 					try {
-						pb.start();		//  Starts SCR decompiler
-						JOptionPane.showMessageDialog(null,"SCR files decompiled successfully!", "Ok", JOptionPane.INFORMATION_MESSAGE);
+						Process decomp_process = pb.start();			//  Starts SCR decompiler
+						decomp_process.waitFor();						//  Wait till it finishes
+						int return_value = decomp_process.exitValue();	//  Get the return value
+						
+						if ( return_value == 0 ) {
+							JOptionPane.showMessageDialog(null,"SCR files decompiled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+						} else if ( return_value == 1 ) {
+							JOptionPane.showMessageDialog(null,"Error reading base script.", "Error", JOptionPane.ERROR_MESSAGE);
+						} else if ( return_value == 2 ) {
+							JOptionPane.showMessageDialog(null,"Error: Could not open base file (file not found).", "Error", JOptionPane.ERROR_MESSAGE);
+						} else if ( return_value == 3 ) {
+							JOptionPane.showMessageDialog(null,"Error allocating memory.", "Error", JOptionPane.ERROR_MESSAGE);
+						} else {
+							JOptionPane.showMessageDialog(null,"Some error ocurred during decompilation.", "Error", JOptionPane.ERROR_MESSAGE);
+						}
+						
 					} catch (IOException ex) {
-						JOptionPane.showMessageDialog(null,"Error.", "Ok", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(null,"IOException error has ocurred.", "Error", JOptionPane.ERROR_MESSAGE);
+					} catch (InterruptedException ex) {
+						JOptionPane.showMessageDialog(null,"InterruptedException error has ocurred.", "Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 				
@@ -242,6 +294,7 @@ public class GUIInterface {
 		first_panel.add(b_out);
 		
 		first_panel.add(cb_dec_missions);
+		first_panel.add(cb_put_dec);
 		first_panel.add(b_decompile);
 		
 		window.add(first_panel);
