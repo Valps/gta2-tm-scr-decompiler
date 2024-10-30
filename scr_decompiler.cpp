@@ -306,9 +306,9 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 	int inside_an_if = 0;				//  used to reset ELSEs count, it's number is the count of IF nestings
 	uint16_t while_or_if;				
 	
-	uint16_t entered_ = 0;			//  it is used when there are AND and ORs in a IF or WHILE
+	uint16_t entered_ = 0;			    //  it is used when there are AND and ORs in a IF or WHILE
 	
-	uint16_t else_point[20];			//  pointers of ELSEs    (20 ELSEs per IF/WHILE block is enough)
+	uint16_t else_point[128];			//  pointers of ELSEs    (128 ELSEs per IF/WHILE block is enough)
 	uint16_t next_point;
 	uint16_t not_next_point;
 	
@@ -1204,10 +1204,10 @@ SCR_DECOMPILER_API int decompile_scr(const string &base_script,	string &base_scr
 
 	// decompile mission scripts into separate string buffers (if any exists):
 	int elems = mission_scripts.size();
+	int mission_number = 1;
+	
 	for(int u = 0; u < elems; u++){
 		params.filename = mission_scripts[u]; // update internal filename (might be used by some functions).
-		
-		int mission_number = u+1;
 		
 		//  To give non-duplicated names to variables
 		
@@ -1262,6 +1262,7 @@ SCR_DECOMPILER_API int decompile_scr(const string &base_script,	string &base_scr
 			process_pointers(params, max_basepointers, params.used_pointers, mission_output);
 
 			// add to output array:
+			++mission_number;				//   Count +1 mission
 			mission_scripts_output.push_back(mission_output);
 		}else{
 			mission_error_handler(5, "// Error: File not found or couldn't be opened for reading.");
