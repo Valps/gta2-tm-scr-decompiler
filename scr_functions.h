@@ -918,8 +918,19 @@ string read_LIGHT(const FPStruct &params){
 	if(params.header->type != SCRCMD_LIGHT_DEC && params.header->type != SCRCMD_CREATE_LIGHT1){
 		endparams = sprintf_str(" %d %d %d", data.on_delay, data.off_delay, data.random_value);
 	}
+	
+	int32_t int_light_radius = data.radius;
+	
+	//  If the radius is 8.00, set to 7.99
+	//  rough approximations there :D
+	if ( int_light_radius >= 131000 ) {					//   131072 = 8.00 * 16384
+		int_light_radius = int_light_radius - 164;		//   164 = 0.01*16384  (approximately)
+	}
+	
+	char *light_radius = const_cast<char*>(scr_float(int_light_radius));
+	
 	return sprintf_str("%s (%s) %s %d (%s)%s", // no "END" at all if using CREATE_LIGHT! weird.
-		prefix.c_str(), scr_coord_3d(data.pos).c_str(), scr_float(data.radius), data.intensity, scr_color_rgb(data.color).c_str(), endparams.c_str()
+		prefix.c_str(), scr_coord_3d(data.pos).c_str(), light_radius, data.intensity, scr_color_rgb(data.color).c_str(), endparams.c_str()
 	);
 }
 LinkToFunc(SCRCMD_CREATE_LIGHT2, read_LIGHT);
@@ -1163,7 +1174,34 @@ LinkToFunc(SCRCMD_DO_SAVE_GAME, read_DO_SAVE_GAME);
 
 
 
+////////////////////////////   Including  SCR_SET_CHAR_OBJ2
 
+struct SCR_SET_CHAR_OBJ2 {
+	SCR_CMD_FORMAT(
+		uint16_t charname;
+		uint16_t objective;
+		uint16_t second_item_name;
+		uint16_t variant;
+	)
+};
+string read_SET_CHAR_OBJ2(const FPStruct &params){
+	get_data(SCR_SET_CHAR_OBJ2, data);
+	
+	//  Check if it's a ENTER_CAR_AS_PASSENGER or ENTER_CAR_AS_DRIVER   =  23 00 in hex;    = 35 in decimal
+	if ( data.objective == 35 ) {		//  data.objective == 23 00
+		if ( data.variant == 0 ) {		//  = 0  if it's ENTER_CAR_AS_DRIVER
+			return sprintf_str("SET_CHAR_OBJECTIVE (%s, ENTER_CAR_AS_DRIVER, %s)", getname(data.charname).c_str(), getname(data.second_item_name).c_str());
+		} else {						//  = 1  if it's ENTER_CAR_AS_PASSENGER
+			return sprintf_str("SET_CHAR_OBJECTIVE (%s, ENTER_CAR_AS_PASSENGER, %s)", getname(data.charname).c_str(), getname(data.second_item_name).c_str());
+		}
+	} else {
+		return sprintf_str("SET_CHAR_OBJECTIVE (%s, %s, %s)", getname(data.charname).c_str(), enum_cstr(OBJECTIVES,data.objective), getname(data.second_item_name).c_str());
+	}
+	
+}
+LinkToFunc(SCRCMD_SET_CHAR_OBJ2, read_SET_CHAR_OBJ2);
+
+////////////////////////////   End modification
 
 struct SCR_SET_CHAR_OBJ3 {
 	SCR_CMD_FORMAT(
@@ -1609,7 +1647,7 @@ FOUR_PARAMS_LAYOUT(SET_PED_DENSITY,		sprintf_str("SET_PEDDENSITY (%s, %d)",				g
 FOUR_PARAMS_LAYOUT(SET_POLICE_CAR,		sprintf_str("SET_POLICECAR_RATIO (%s, %d)",			get_scr_string(data.var1).c_str(), data.var3));
 FOUR_PARAMS_LAYOUT(SET_POLICE_PED,		sprintf_str("SET_POLICEPED_RATIO (%s, %d)",			get_scr_string(data.var1).c_str(), data.var3));
 FOUR_PARAMS_LAYOUT(SET_RUN_SPEED,		sprintf_str("SET_CHAR_MAX_RUNSPEED (%s, %s)",		getname(data.var1).c_str(), scr_float(data.floatval)));
-FOUR_PARAMS_LAYOUT(SET_CHAR_OBJ2,		sprintf_str("SET_CHAR_OBJECTIVE (%s, %s, %s)",		getname(data.var1).c_str(), enum_cstr(OBJECTIVES,data.var2), getname(data.var3).c_str()));
+//FOUR_PARAMS_LAYOUT(SET_CHAR_OBJ2,		sprintf_str("SET_CHAR_OBJECTIVE (%s, %s, %s)",		getname(data.var1).c_str(), enum_cstr(OBJECTIVES,data.var2), getname(data.var3).c_str()));
 FOUR_PARAMS_LAYOUT(GIVE_WEAPON2,		sprintf_str("GIVE_WEAPON (%s, %s, %d)",				getname(data.var1).c_str(), enum_cstr(WEAPONS,data.var2), data.sintvar3));
 
 // math functions: (note: S_MINUS_I wont compile!)
@@ -1757,7 +1795,7 @@ CUSTOM_STRUCT_LAYOUT_BOOL(CAR_IN_AREA,	   SCR_ONEVAR_RECT,		sprintf_str("IS_CAR_
 
 struct SCR_IF_JUMP {
 	SCR_CMD_FORMAT(
-		//uint16_t and_logical_operator;       // First dword: 0 or 1. It's 1 for AND command.
+		//uint16_t and_logical_operator;       // First dword: 0 or 1. It's 1 for AND command.    This = return_value
 		uint16_t or_logical_operator;        // Second dword: 0 or 1. It's 1 for OR command.
 		uint16_t else_jump_or_endif_index;   // If the 1st and 2nd dwords are 0 it will be "else_jump_index", where will it jump if check was false. Otherwise it will be the ENDIF index
 	)
@@ -1768,7 +1806,7 @@ string read_IF_JUMP(const FPStruct &params){
 	    //  It's the end of a IF or a WHILE
 		//return sprintf_str("ENDIF %s", hexdump(params,0).c_str());
 		if ( 1 ) {
-			return "ENDIF_ZZZZZ";
+			return "ENDIF";
 		} else {
 			return "ENDWHILE";
 		}

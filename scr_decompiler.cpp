@@ -298,7 +298,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 	bool not_operator = 0;				//  this = 1 means that there is a NOT
 	bool skip = 0;					    //  workaround to use "continue" outside a DO...WHILE;
 	bool is_not = 0;					//  this = 1 means that the next boolean check is undergoing a NOT
-	bool is_endif = 0;					//  WHILE_EXEC
+	//bool is_endif = 0;					//  WHILE_EXEC
 	bool is_exec = 0;					//  this = 1 means that there is an EXEC acquired from a WHILE_EXEC
 	
 	int else_count = 0;				    //  counts the number of ELSEs in a IF/WHILE
@@ -306,13 +306,11 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 	int inside_an_if = 0;				//  used to reset ELSEs count, it's number is the count of IF nestings
 	uint16_t while_or_if;				
 	
-	uint16_t entered_ = 0;			    //  it is used when there are AND and ORs in a IF or WHILE
+	//uint16_t entered_ = 0;			    //  it is used when there are AND and ORs in a IF or WHILE
 	
 	uint16_t else_point[128];			//  pointers of ELSEs    (128 ELSEs per IF/WHILE block is enough)
 	uint16_t next_point;
 	uint16_t not_next_point;
-	
-	uint16_t access_command_index = 0;
 	
 	string not_init = "";
 	string not_end = "";
@@ -550,7 +548,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									//  Now we need to check if it's a DO... WHILE_TRUE structure by comparing the next index
 									//  If it's point directly to a GOTO, it's the end of a DO... WHILE_TRUE structure
 									
-									int original_point = u2;	//  save the current pointer in order to get back after doing the check
+									//int original_point = u2;	//  save the current pointer in order to get back after doing the check
 									
 									next_point = params.header->cmd_next;
 						
@@ -663,8 +661,6 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 										} else {
 											while_or_if = SCRCMD_IF;
 										}
-										// store the index of the first command in IF/WHILE block
-										access_command_index = params.header->cmd_next;
 										
 										//  check for ELSEs
 										//  Checking if there is an ELSE
@@ -838,13 +834,13 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 							int u2;
 							next_point = params.header->cmd_next;
 							
-							bool is_jump_back = false;
+							//bool is_jump_back = false;
 							
 							//  Ignore IF_JUMPs that jumps back
 							if ( next_point < params.header->cmd_this ) {
-								is_jump_back = true;
+								//is_jump_back = true;
 							} else {
-								is_jump_back = false;
+								//is_jump_back = false;
 								//  Verifying
 								
 								for (u2 = start_point; params.header->cmd_this != next_point ; u2++) {
