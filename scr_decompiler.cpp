@@ -437,6 +437,21 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 				}
 			}
 		}
+		
+		//  Building ELSEs
+		if ( inside_an_if ) {		//  inside_if_while == 1
+			//  Check if it has reached an ELSE
+			if ( else_count > 0 ) {
+				for (int else_index = 0; else_index < else_count; else_index++ ) {
+					if ( params.header->cmd_this == else_point[else_index] ) {
+						tabs = tabs.substr(0, tabs.length()-3);   //  Remove TABS
+						output += tabs + "ELSE" + LINESEP;		//  " " + sprintf_str("%i", else_point[else_index])
+						tabs += "\t\t\t";						  //  restaure TABS
+						break;
+					}
+				}
+			}
+		}
 
 		#ifdef SCR_INCLUDE_DEBUG			//   For now all IF/WHILE decompiler code is in debug. When it is finished, I will restore debug outputs
 		if(params.point == 0){
@@ -566,13 +581,16 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 									//  It's an ENDIF
 									output += tabs + "IF ( " + not_init + retval + not_end + " )" + LINESEP;    //   + sprintf_str("%i", u2)
 									inside_an_if++;
+								
+									get_data(SCR_IF_JUMP, data3);
 									
 									//  Checking if there is an ELSE
 								
-									if ( data.else_jump_or_endif_index < params.header->cmd_this ) {
+									if ( data3.else_jump_or_endif_index < params.header->cmd_this ) {
 										//  There is an ELSE
-										else_point[else_count] = data.else_jump_or_endif_index;
+										else_point[else_count] = data3.else_jump_or_endif_index;
 										++else_count;
+										//output += string("// CMD: ELSE found: ") + sprintf_str("%i", data3.else_jump_or_endif_index) + LINESEP;
 									}
 									
 								}
@@ -862,7 +880,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 							
 						} else {
 							tabs = tabs.substr(0, tabs.length()-3);   //  Remove TABS
-							output += tabs + "ENDIF" + LINESEP;
+							output += tabs + "ENDIF" + LINESEP;		//  string("// CMD: ") + sprintf_str("%i", params.header->cmd_this)
 							--inside_an_if;
 						}
 						
@@ -905,35 +923,8 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 				}
 				
 				
-				//  Building ELSEs
-				if ( inside_an_if ) {		//  inside_if_while == 1
-					//  Check if it has reached an ELSE
-					if ( else_count > 0 ) {
-						for (int else_index = 0; else_index < else_count; else_index++ ) {
-							if ( params.header->cmd_this == else_point[else_index] ) {
-								tabs = tabs.substr(0, tabs.length()-3);   //  Remove TABS
-								output += tabs + "ELSE" + LINESEP;
-								tabs += "\t\t\t";						  //  restaure TABS
-								break;
-							}
-						}
-					}
-				}
 				
 				
-				
-				/*
-				//  Building DO's
-				if ( do_count > 0 ) {
-					for (int do_index = 0; do_index < do_count; do_index++ ) {
-						if ( params.header->cmd_this == do_point[do_index] ) {
-							output += tabs + "DO" + LINESEP;
-							tabs += "\t\t\t";						  //  indent
-							break;
-						}
-					}
-				}
-				*/
 					
 				
 				//   TODO       skipping IF_JUMP for now
@@ -1002,7 +993,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 						if ( header2->type == SCRCMD_GOTO ) {
 							output += tabs + "ENDWHILE" + LINESEP;
 						} else {
-							output += tabs + "ENDIF" + LINESEP;
+							output += tabs + "ENDIF" +LINESEP;
 						}
 						
 						continue;    //  go to next pointer
