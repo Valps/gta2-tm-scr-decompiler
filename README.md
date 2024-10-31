@@ -10,7 +10,7 @@
 
 ## Known issues
 
-- If you try to decompile a script that uses the memory changer command (CHANGE_GANG_CHAR_RESPECT), it will give <STRNOTFOUND> to the first parameter as decompiler will expect it to be a GANG from SET_GANG_INFO instead of a COUNTER.
+- If you try to decompile a script that uses the memory changer command (CHANGE_GANG_CHAR_RESPECT), it will give \<STRNOTFOUND\> to the first parameter as decompiler will expect it to be a GANG from SET_GANG_INFO instead of a COUNTER.
 
 ## Compiling and building
 
