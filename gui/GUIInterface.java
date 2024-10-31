@@ -35,7 +35,7 @@ public class GUIInterface {
 	static String output_path;
 	
 	public static void main(String[] args) {
-		JFrame window = new JFrame("T.M. Decompiler User Interface v0.6.0");
+		JFrame window = new JFrame("T.M. Decompiler User Interface v1.0.0");
 		
 		window.setLocationRelativeTo(null);
 		
