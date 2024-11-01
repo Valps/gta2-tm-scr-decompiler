@@ -14,8 +14,8 @@
 
 ## Compiling and building
 
-- To compile & build the decompiler, execute "*compile_and_build.bat*" from the root folder. Ensure that you have installed "Python", "Meson Build System" and "Ninja". The executable will be created at **%ROOT_FOLDER%/build/** as well as libscrd.dll. Delete the "build" folder if you want to recompile.
-- To compile & build the Graphic User Interface (GUI), execute "*compile_build.bat*" from **%ROOT_FOLDER%/gui/**. Ensure that you have installed a Java Development Kit (JDK) in your system as well as Java Runtime Environment (JRE) to run the GUI.
+- To compile & build the decompiler, execute "*compile_and_build.bat*" from the root folder. Ensure that you have installed "Python", "Meson Build System", "Ninja" and a C++ compiler. The executable will be created at **%ROOT_FOLDER%/build/** as well as libscrd.dll. Delete the "build" folder if you want to recompile. I particularly have used MinGW-W64 i686-ucrt-posix-dwarf gcc win32 14.2.0 compiler, LLVM 19.1.1. You can download it at https://winlibs.com/ . Remember to put the "bin" folder in PATH system variable environment, for example "C:\MinGW\mingw32\bin\".
+- To compile & build the Graphical User Interface (GUI), execute "*compile_build.bat*" from **%ROOT_FOLDER%/gui/**. Ensure that you have installed a Java Development Kit (JDK) in your system as well as Java Runtime Environment (JRE) to run the GUI.
 - The GUI file "*GUIInterface.jar*" and the decompiler executable "*scr_decompiler.exe*" as well as "*libscrd.dll*" must be at the same folder in order to work properly.
 
 Greetings from Valps.
