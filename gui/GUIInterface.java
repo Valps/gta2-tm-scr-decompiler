@@ -35,15 +35,12 @@ public class GUIInterface {
 	static String output_path;
 	
 	public static void main(String[] args) {
-		JFrame window = new JFrame("T.M. Decompiler User Interface v1.0.0");
 		
+		JFrame window = new JFrame("T.M. Decompiler User Interface v1.0.1");
 		window.setLocationRelativeTo(null);
+		window.setLayout(new GridLayout());		//  FlowLayout
 		
 		JPanel first_panel = new JPanel();
-		JPanel second_panel = new JPanel();
-		JPanel third_panel = new JPanel();
-		
-		window.setLayout(new GridLayout());		//  FlowLayout
 		
 		JLabel l_load = new JLabel("   SCR:");
 		JLabel l_out = new JLabel("Output:");
@@ -76,7 +73,7 @@ public class GUIInterface {
 					initial_path = System.getProperty("user.dir");
 				}
 				
-				final JFileChooser fc = new JFileChooser(initial_path);
+				final JFileChooser fc = new JFileChooser(initial_path);		//  File chooser
 				FileNameExtensionFilter filter = new FileNameExtensionFilter("SCR script files", "scr");
 				fc.setFileFilter(filter);
 				fc.showOpenDialog(null);
@@ -85,21 +82,21 @@ public class GUIInterface {
 				//  If a file has been selected
 				if ( base_script_file != null ) {
 					String absolute_path = base_script_file.getAbsolutePath();
-					String mission_path = absolute_path.replaceFirst("[.][^.]+$", "");
-					String output_path = base_script_file.getParent();
+					String mission_path = absolute_path.replaceFirst("[.][^.]+$", "");		//  remove the extension  ".scr"
+					String output_path = base_script_file.getParent();						//  get the root folder of .scr file
 				
 					mission_path = mission_path.concat("/");
 					output_path = output_path.concat("/");
 					
-					File tempFile = new File(mission_path);
+					File mission_folder_file = new File(mission_path);
 					
 					//  Formating path folders
 					mission_path = mission_path.replace("\\","/");
 					absolute_path = absolute_path.replace("\\","/");
 					output_path = output_path.replace("\\","/");
 					
-					
-					if ( tempFile.exists() ) {
+					//  Check if the scr folder has a mission folder
+					if ( mission_folder_file.exists() ) {
 						
 						GUIInterface.mission_path = mission_path;
 						
@@ -108,34 +105,29 @@ public class GUIInterface {
 							
 							//  If the box isn't selected, do select
 							if ( !cb_dec_missions.isSelected() ) {
-								cb_dec_missions.setSelected(true);			// cb_dec_missions.doClick();
+								cb_dec_missions.setSelected(true);
 							}
 							
 						} else {
-							GUIInterface.decompile_missions = false;
+							GUIInterface.decompile_missions = false;	//  update flag
+							cb_dec_missions.setSelected(false);			//  uncheck the "decompile scripts" box
 						}
 						
-						cb_dec_missions.setEnabled(true);
+						cb_dec_missions.setEnabled(true);				//  unlock the "decompile scripts" box
 						
 					} else {
 						//  No mission folder
-						cb_dec_missions.setSelected(false);
-						cb_dec_missions.setEnabled(false);
-						GUIInterface.decompile_missions = false;
+						cb_dec_missions.setSelected(false);				//  uncheck the "decompile scripts" box
+						cb_dec_missions.setEnabled(false);				//  lock the "decompile scripts" box
+						GUIInterface.decompile_missions = false;		//  update flag
 					}
 					
+					//  Setting folders and updating text field
 					
 					GUIInterface.base_script_path = absolute_path;
 					f_load.setText(absolute_path);
 					path_saved = true;
 					
-					//  If output directory hasn't been set yet
-					/*
-					if ( ( f_out.getText() == null ) || ( f_out.getText().equals("") ) ) {
-						GUIInterface.output_path = output_path;
-						f_out.setText(output_path);
-					}
-					*/
 					GUIInterface.output_path = output_path;
 					f_out.setText(output_path);
 					
@@ -148,7 +140,16 @@ public class GUIInterface {
 		b_out.addActionListener(new java.awt.event.ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fc = new JFileChooser(System.getProperty("user.dir"));
+				
+				String initial_path;
+				//  If it was opened before, use the previous path
+				if ( path_saved ) {
+					initial_path = base_script_path;
+				} else {
+					initial_path = System.getProperty("user.dir");
+				}
+				
+				final JFileChooser fc = new JFileChooser(initial_path);
 				fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				fc.showOpenDialog(null);
 				File base_script_file = fc.getSelectedFile();
@@ -265,7 +266,7 @@ public class GUIInterface {
 						if ( return_value == 0 ) {
 							JOptionPane.showMessageDialog(null,"SCR files decompiled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 						} else if ( return_value == 1 ) {
-							JOptionPane.showMessageDialog(null,"Error reading base script.", "Error", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(null,"Error: Choose a base script.", "Error", JOptionPane.ERROR_MESSAGE);
 						} else if ( return_value == 2 ) {
 							JOptionPane.showMessageDialog(null,"Error: Could not open base file (file not found).", "Error", JOptionPane.ERROR_MESSAGE);
 						} else if ( return_value == 3 ) {
@@ -301,6 +302,7 @@ public class GUIInterface {
 		window.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		window.setSize(450,175);
 		window.setVisible(true);
+		
 		
 	}
 
