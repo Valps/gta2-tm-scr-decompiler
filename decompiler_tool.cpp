@@ -6,7 +6,7 @@
 
 #include <scr_decompiler_api.h>
 
-#include <stdio.h>	  //  to make pauses and print
+//#include <stdio.h>	  //  to make pauses and print
 
 #include <fstream>
 #include <bits/stl_vector.h>
@@ -44,6 +44,12 @@ main(int argc, char **argv)
 	}
 	printf("Decompiling... ");
 	ret = decompile_scr(base_script, base_script_output, mission_scripts, mission_scripts_output);
+	
+	if ( ret != 0 ) {
+		printf("Error occured during decompilation.\n");
+		return ret;
+	}
+	
 	printf("done.\n");
 
 	if(fs::is_directory(out_dir)) {

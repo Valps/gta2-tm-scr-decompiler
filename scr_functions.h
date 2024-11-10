@@ -1488,6 +1488,7 @@ ZERO_PARAMS_LAYOUT(TIMER_DECLARE,		sprintf_str("TIMER_DATA %s",		setgetname(VARN
 ZERO_PARAMS_LAYOUT(ONSCREEN_COUNTER_DEC,sprintf_str("ONSCREEN_COUNTER %s",	setgetname(VARNAME_ONSCREEN_COUNTER).c_str()));
 
 // functions with max 2 params:
+TWO_PARAMS_LAYOUT(SETUP_MODEL_CHECK,	sprintf_str("SETUP_MODELCHECK_DESTROY (%s)",	            enum_cstr(CARS,data.var1)));
 TWO_PARAMS_LAYOUT(1_PASSED_FLAG,		sprintf_str("DECLARE_GANG_ONE_MISSIONS_PASSED_FLAG (%s)",	getname(data.var1).c_str()));
 TWO_PARAMS_LAYOUT(2_PASSED_FLAG,		sprintf_str("DECLARE_GANG_TWO_MISSIONS_PASSED_FLAG (%s)",	getname(data.var1).c_str()));
 TWO_PARAMS_LAYOUT(3_PASSED_FLAG,		sprintf_str("DECLARE_GANG_THREE_MISSIONS_PASSED_FLAG (%s)", getname(data.var1).c_str()));
@@ -1742,7 +1743,7 @@ TWO_PARAMS_LAYOUT_BOOL(IS_ITEM_ONSCREEN,	sprintf_str("IS_ITEM_ONSCREEN%s(%s)", 	
 TWO_PARAMS_LAYOUT_BOOL(IS_TRAILER_ATT,		sprintf_str("IS_TRAILER_ATTACHED%s(%s, %s)",		FUNCSPACE.c_str(), getname(data.var1).c_str(), getname(data.var2).c_str()));
 TWO_PARAMS_LAYOUT_BOOL(ONSCREEN_ACCURACY,	sprintf_str("IS_ITEM_ACCURATELY_ONSCREEN%s(%s)",	FUNCSPACE.c_str(), getname(data.var1).c_str()));
 TWO_PARAMS_LAYOUT_BOOL(PUNCHED_SOMEONE,		sprintf_str("HAS_CHAR_PUNCHED_SOMEONE%s(%s)",		FUNCSPACE.c_str(), getname(data.var1).c_str()));
-TWO_PARAMS_LAYOUT_BOOL(SETUP_MODEL_CHECK,	sprintf_str("SETUP_MODELCHECK_DESTROY%s(%s)",		FUNCSPACE.c_str(), enum_cstr(CARS,data.var1)));
+//TWO_PARAMS_LAYOUT_BOOL(SETUP_MODEL_CHECK,	sprintf_str("SETUP_MODELCHECK_DESTROY%s(%s)",		FUNCSPACE.c_str(), enum_cstr(CARS,data.var1)));
 TWO_PARAMS_LAYOUT_BOOL(SPOTTED_PLAYER,		sprintf_str("HAS_CHAR_SPOTTED_PLAYER%s(%s)",		FUNCSPACE.c_str(), getname(data.var1).c_str()));
 
 // boolean functions with max 4 params:

@@ -276,6 +276,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 	bool skip = 0;					    //  workaround to use "continue" outside a DO...WHILE;
 	bool is_not = 0;					//  this = 1 means that the next boolean check is undergoing a NOT
 	bool is_exec = 0;					//  this = 1 means that there is an EXEC acquired from a WHILE_EXEC
+	bool is_in_func = 0;		        //  this = 1 means that it is inside a function/subroutine
 	
 	int else_count = 0;				    //  counts the number of ELSEs in a IF/WHILE
 	int line = 1;						//  The line of an AND or OR below an IF/WHILE
@@ -871,6 +872,7 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 				}else if(params.header->type == SCRCMD_RETURN){
 					if(tabslen > 0 && inside_if_while == 0){			//  It will remove the function indent only it the RETURN command isn't in a IF/WHILE
 						tabs = tabs.substr(0, tabs.length()-1);
+						is_in_func = false;
 					}
 				}
 				
@@ -889,7 +891,13 @@ void process_pointers(FPStruct &params, const int &start_point, const int &end_p
 
 				// indents handling:
 				if(params.header->type == SCRCMD_FUNCTION){
-					tabs += "\t";
+					
+					//  Only indent if it wasn't inside a function before
+					if ( !is_in_func ) {
+						tabs += "\t";
+						is_in_func = true;
+					}
+					
 				}else if(params.header->type == SCRCMD_RETURN){
 					if(tabslen > 0 && inside_if_while == 0){ // don't add space if it wasnt inside a function.
 						output += LINESEP;
